@@ -17,6 +17,10 @@ void display_villagers(const VillagerMap& villagers);
 void search_villager(const VillagerMap& villagers, const string& name);
 
 int main_menu();
+bool read_number(const string& prompt, int minimum, int maximum, int& value);
+bool read_text(const string& prompt, string& value);
+bool add_villager(VillagerMap& villagers);
+void delete_villager(VillagerMap& villagers, const string& name);
 void change_friendship(VillagerMap& villagers, const string& name, int change);
 
 int main() {
@@ -28,20 +32,25 @@ int main() {
     display_villagers(villagers);
     while (true) {
         int choice = main_menu();
-        if (choice == 4)
+        if (choice == 6)
             break;
 
-        cout << "Villager name: ";
-        string name;
-        if (!getline(cin, name))
-            break;
-
-        if (choice == 1)
-            change_friendship(villagers, name, 1);
-        else if (choice == 2)
-            change_friendship(villagers, name, -1);
-        else
-            search_villager(villagers, name);
+        if (choice == 1) {
+            if (!add_villager(villagers))
+                break;
+        } else {
+            string name;
+            if (!read_text("Villager name: ", name))
+                break;
+            if (choice == 2)
+                delete_villager(villagers, name);
+            else if (choice == 3)
+                change_friendship(villagers, name, 1);
+            else if (choice == 4)
+                change_friendship(villagers, name, -1);
+            else
+                search_villager(villagers, name);
+        }
         display_villagers(villagers);
     }
     cout << "Goodbye!" << endl;
@@ -74,24 +83,77 @@ void search_villager(const VillagerMap& villagers, const string& name) {
 }
 
 int main_menu() {
-    cout << "\n1. Increase Friendship\n"
-         << "2. Decrease Friendship\n"
-         << "3. Search for Villager\n"
-         << "4. Exit\n";
+    cout << "\n1. Add Villager\n"
+         << "2. Delete Villager\n"
+         << "3. Increase Friendship\n"
+         << "4. Decrease Friendship\n"
+         << "5. Search for Villager\n"
+         << "6. Exit\n";
+    int choice;
+    if (!read_number("Enter choice: ", 1, 6, choice))
+        return 6;
+    return choice;
+}
+
+bool read_number(const string& prompt, int minimum, int maximum, int& value) {
     while (true) {
-        cout << "Enter choice: ";
+        cout << prompt;
         string input;
         if (!getline(cin, input))
-            return 4;
+            return false;
 
         // accept a whole integer without trailing input
         istringstream entry(input);
-        int choice;
+        int number;
         char extra;
-        if (entry >> choice && !(entry >> extra) && choice >= 1 && choice <= 4)
-            return choice;
-        cout << "Please enter a number from 1 to 4." << endl;
+        if (entry >> number && !(entry >> extra) && number >= minimum && number <= maximum) {
+            value = number;
+            return true;
+        }
+        cout << "Please enter a number from " << minimum << " to " << maximum << "." << endl;
     }
+}
+
+bool read_text(const string& prompt, string& value) {
+    while (true) {
+        cout << prompt;
+        string input;
+        if (!getline(cin, input))
+            return false;
+        if (input.find_first_not_of(" \t\r\n\v\f") != string::npos) {
+            value = input;
+            return true;
+        }
+        cout << "Please enter a nonempty value." << endl;
+    }
+}
+
+bool add_villager(VillagerMap& villagers) {
+    string name, species, catchphrase;
+    int friendship;
+    if (!read_text("Villager name: ", name))
+        return false;
+    if (villagers.find(name) != villagers.end()) {
+        cout << name << " already exists." << endl;
+        return true;
+    }
+
+    // finish all input before changing the map
+    if (!read_number("Friendship level: ", 0, 10, friendship) ||
+        !read_text("Species: ", species) || !read_text("Catchphrase: ", catchphrase)) {
+        cout << "Addition canceled: input ended." << endl;
+        return false;
+    }
+    villagers.insert({name, {friendship, species, catchphrase}});
+    cout << name << " added." << endl;
+    return true;
+}
+
+void delete_villager(VillagerMap& villagers, const string& name) {
+    if (villagers.erase(name) != 0)
+        cout << name << " deleted." << endl;
+    else
+        cout << name << " not found." << endl;
 }
 
 void change_friendship(VillagerMap& villagers, const string& name, int change) {

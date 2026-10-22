@@ -4,56 +4,65 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
+#include <tuple>
 using namespace std;
 
+// each tuple stores friendship level, species, and catchphrase
+using Villager = tuple<int, string, string>;
+using VillagerMap = map<string, Villager>;
+
+void print_villager(const string& name, const Villager& details);
+void display_villagers(const VillagerMap& villagers);
+void search_villager(const VillagerMap& villagers, const string& name);
+
 int main() {
-    // store each villager's favorite colors
-    map<string, vector<string>> villagerColors;
+    VillagerMap villagers;
+    villagers["Drago"] = {5, "Alligator", "Snap to It!"};
+    villagers["Raymond"] = {8, "Cat", "Nice fit"};
+    villagers.insert({"Kyle", {10, "Wolf", "Hubba hubba!"}});
 
-    // insert elements into the map
-    villagerColors["Audie"] = {"Orange", "Yellow", "Red"};
-    villagerColors["Raymond"] = {"Black", "Gray", "White"};
-    villagerColors.insert({"Marshal", {"Blue", "White", "Black"}});
+    // exercise tuple output with a range loop and iterators
+    display_villagers(villagers);
+    cout << "\nVillager details using iterators:" << endl;
+    for (VillagerMap::const_iterator it = villagers.begin(); it != villagers.end(); ++it)
+        print_villager(it->first, it->second);
 
-    // access the map using a range loop
-    cout << "Villagers and their favorite colors (range-based for loop):" << endl;
-    for (auto pair : villagerColors) {
-        cout << pair.first << ": ";
-        for (auto color : pair.second)
-            cout << color << " ";
-        cout << endl;
-    }
+    // check a tuple field and search for existing and missing names
+    cout << "\nDrago's friendship level: " << get<0>(villagers.at("Drago")) << endl;
+    search_villager(villagers, "Drago");
+    villagers.erase("Raymond");
+    search_villager(villagers, "Raymond");
+    display_villagers(villagers);
 
-    // access the map using iterators
-    cout << "\nVillagers and their favorite colors (iterators):" << endl;
-    for (map<string, vector<string>>::iterator it = villagerColors.begin();
-         it != villagerColors.end(); ++it) {
-        cout << it->first << ": ";
-        for (auto color : it->second) {
-            cout << color << " ";
-        }
-        cout << endl;
-    }
-
-    // delete an element
-    villagerColors.erase("Raymond");
-
-    // check the iterator before accessing a search result
-    string searchKey = "Audie";
-    auto it = villagerColors.find(searchKey);
-    if (it != villagerColors.end()) {
-        cout << "\nFound " << searchKey << "'s favorite colors: ";
-        for (auto color : it->second)
-            cout << color << " ";
-        cout << endl;
-    } else
-        cout << endl << searchKey << " not found." << endl;
-
-    // report sizes before and after clearing
-    cout << "\nSize before clear: " << villagerColors.size() << endl;
-    villagerColors.clear();
-    cout << "Size after clear: " << villagerColors.size() << endl;
+    // confirm that clearing removes all the tuples
+    cout << "\nSize before clear: " << villagers.size() << endl;
+    villagers.clear();
+    cout << "Size after clear: " << villagers.size() << endl;
+    display_villagers(villagers);
 
     return 0;
+}
+
+void print_villager(const string& name, const Villager& details) {
+    cout << name << " [" << get<0>(details) << ", " << get<1>(details)
+         << ", " << get<2>(details) << "]" << endl;
+}
+
+void display_villagers(const VillagerMap& villagers) {
+    cout << "Villager details:" << endl;
+    if (villagers.empty()) {
+        cout << "No villagers yet." << endl;
+        return;
+    }
+    for (const auto& villager : villagers)
+        print_villager(villager.first, villager.second);
+}
+
+void search_villager(const VillagerMap& villagers, const string& name) {
+    // find does not add a new entry when the name is missing
+    auto it = villagers.find(name);
+    if (it != villagers.end())
+        print_villager(it->first, it->second);
+    else
+        cout << name << " not found." << endl;
 }
